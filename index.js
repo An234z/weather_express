@@ -17,6 +17,9 @@ const getWeatherDataPromise = (url) => {
         fetch(url)
         .then(response => response.json())
         .then(data => {
+			if (data.cod !== 200) {
+                reject("Problem with getting data, try again");
+            } else {
             let description = data.weather[0].description;
             let city = data.name;
             let temp = Math.round(parseFloat(data.main.temp) - 273.15);
@@ -27,9 +30,10 @@ const getWeatherDataPromise = (url) => {
                 error: null
             };
             resolve(result);
+			}
         })
         .catch(error => {
-            reject(error);
+            reject("Problem with getting data, try again");
         });
     });
 };
@@ -41,7 +45,14 @@ app.all("/", function(req, res) {
     }
     if (req.method == "POST") {
         city = req.body.cityname;
+    
+		if (!city || city.trim() === "") {
+            return res.render("index", { error: "Tuleb sisestada korrektne linna nimi!" });
+        }
     }
+
+
+
     let url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${key}`;
     
     getWeatherDataPromise(url)
@@ -49,7 +60,7 @@ app.all("/", function(req, res) {
         res.render("index", data);
     })
     .catch(error => {
-        res.render("index", { error: "Problem with getting data, try again" });
+        res.render("index", { error: error});
     });
 });
 
